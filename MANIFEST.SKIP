@@ -12,3 +12,4 @@ exes/
 dev/
 release/
 ^#
+\.svn/
