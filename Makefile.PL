@@ -1,6 +1,6 @@
 use ExtUtils::MakeMaker;
 
-@scripts = grep {-f } glob("scripts/*.*");
+@scripts = grep {-f } glob("scripts/*");
 #@theselibs = grep {-f } glob("lib/Font/TTF/*");
 
 # incantation to enable MY::pm_to_blib later on
@@ -8,7 +8,7 @@ push(@ExtUtils::MakeMaker::Overridable, qw(pm_to_blib)) if ($^O eq 'MSWin32');
 
 WriteMakefile (
         NAME => "Encode::UTR22",
-        VERSION => "0.12",
+        VERSION => "0.13",
         EXE_FILES => \@scripts,
 #        HTMLLIBPODS => {map {my $t = $_; $t=~s/\..*?$/.html/o; $t='blib/Html/'.$t; $_ => $t;} @theselibs},
 #        HTMLSCRIPTPODS => {map {my $t=$_; $t=~s/\..*?$/.html/o; $t='blib/Html/'.$t; $_ => $t;} @scripts},

@@ -25,9 +25,10 @@ Features of this module
 
 =cut
 
-require 5.6.0;
+require 5.8.0;
 
 use XML::Parser::Expat;
+use Encode;
 use Carp;
 use strict;
 
@@ -227,14 +228,14 @@ sub compile
     $self;
 }
 
-sub decode
+sub decode($$;$)
 {
     my ($self, $str, $check) = @_;
     my ($res, $len, $c, $temp, $r, $count, $tpos, $found);
 
     return undef unless ($self->{'bsimple'} || $self->{'bconv'});
 
-    use bytes;
+    Encode::_utf8_on($res);
 
     $str = $self->reorder($str, $self->{'border'}[0], 1) if (defined $self->{'border'}[0]);
 
@@ -279,14 +280,14 @@ sub decode
     $res;
 }
 
-sub encode
+sub encode($$;$)
 {
     my ($self, $str, $check) = @_;
     my ($res, $len, $c, $temp, $r, $tpos, $found);
 
     return undef unless ($self->{'usimple'} || $self->{'uconv'});
 
-    use utf8;
+    Encode::_utf8_off($res);
 
     $str = $self->reorder($str, $self->{'uorder'}[0], 0) if (defined $self->{'uorder'}[0]);
 
@@ -338,7 +339,7 @@ sub debug_decode
 
     return undef unless ($self->{'bsimple'} || $self->{'bconv'});
 
-    use bytes;
+    Encode::_utf8_on($res);
 
     ($str, $debug) = $self->debug_reorder($str, $self->{'border'}[0], 1) if (defined $self->{'border'}[0]);
 
@@ -409,7 +410,7 @@ sub debug_encode
 
     return undef unless ($self->{'usimple'} || $self->{'uconv'});
 
-    use utf8;
+    Encode::_utf8_off($res);
 
     ($str, $debug) = $self->debug_reorder($str, $self->{'uorder'}[0], 0) if (defined $self->{'uorder'}[0]);
     $debug .= "\nMapping from Unicode to Bytes\n";
@@ -670,8 +671,16 @@ sub reorder
     my ($self, $str, $rules, $isbytes) = @_;
     my ($r, $res, $found, $len, @ress, $temp, $oldpos);
 
-    use bytes;
-    $len = length($str);
+    if ($isbytes || $] < 5.008)
+    {
+        use bytes;
+        $len = length($str);
+    }
+    else
+    {
+        use utf8;
+        $len = length($str);
+    }
     while (pos($str) < $len)
     {
         $found = 0;
@@ -711,6 +720,7 @@ sub reorder
                 $str =~ m/\G(.)/ogcs;
                 $res .= $1;
             }
+            $oldpos++;
         }
     }
     $res;
