@@ -1,10 +1,10 @@
 package Encode::UTR22;
 
-=head1 TITLE
+=head1 NAME
 
 Encode::UTR22 - Implement Unicode TR22 complex conversions
 
-=DESCRIPTION
+=head1 DESCRIPTION
 
 Implements all of UTR22 except:
 
@@ -23,6 +23,34 @@ Features of this module
     It's slow at the moment!
     Supports priority attribute
 
+=head1 INSTANCE VARIABLES
+
+=over
+
+=item 'info'
+
+Hash containing attributes from the C<< <characterMapping> >> element.
+
+=item 'sub'
+
+Two element array containing, in order, the bytes and Unicode replacement characters
+
+=item 'classes'
+
+Hash, indexed by classname, returning L<Encode::UTR22::Regexp::class|Encode::UTR22::Regexp::class> object.
+
+=item 'rules'
+
+Array of rules, each rule being a hash.
+
+=item 'contexts'
+
+Hash, indexed by contextname, returning L<Encode::UTR22::Regexp::group|Encode::UTR22::Regexp::group> object representing a context expression.
+
+=back
+
+=head1 METHODS
+
 =cut
 
 require 5.8.0;
@@ -36,6 +64,14 @@ use vars qw($current $curr_side $VERSION);
 
 $VERSION = 0.02;    #   MJPH     7-JUL-2004     Add bctxt to reorder rules
 
+=over 8
+
+=item	new( $infile [, %parms ] )
+
+Create new instance, parsing and compiling the UTR22 xml
+
+=cut
+
 sub new
 {
     my ($class, $infile, %attrs) = @_;
@@ -43,6 +79,12 @@ sub new
     $self->compile(%attrs);
     $self;
 }
+
+=item	process_file( $infile [, %params ] )
+
+Create and return a new instance, and parse (but do not compile) a UTR22 xml file
+
+=cut
 
 sub process_file
 {
@@ -72,6 +114,7 @@ sub process_file
         elsif ($tag eq 'assignments')
         {
             $xml->{' mycontext'}{'sub'}[0] = pack('C', hex($attrs{'sub'}));
+          
             $xml->{' mycontext'}{'sub'}[1] = pack('U', 0xFFFD);
         }
         elsif ($tag eq 'a' || $tag eq 'fbu' || $tag eq 'fub')
@@ -197,6 +240,23 @@ sub process_file
     return $context;
 }
 
+=item	compile( [ %params ] )
+
+Compile a UTR22 object.  Parameters recognized
+
+=over 4
+
+=item 'toBytes'
+
+Determines which direction that map will be compiled. True = compile for Unicode to Bytes. False = compile for Bytes to Unicode. Default is both.
+
+=item 'debug'
+
+Turn on debugging.
+
+=back
+
+=cut
 
 sub compile
 {
@@ -227,6 +287,12 @@ sub compile
     }
     $self;
 }
+
+=item	decode( $sourceByteString [, CHECK] )
+
+Perform Bytes to Unicode conversion.
+
+=cut
 
 sub decode($$;$)
 {
@@ -279,6 +345,12 @@ sub decode($$;$)
     $res = $self->reorder($res, $self->{'border'}[1], 0) if (defined $self->{'border'}[1]);
     $res;
 }
+
+=item	encode( $sourceUnicodeString [, CHECK])
+
+Perform Unicode to Bytes conversion.
+
+=cut
 
 sub encode($$;$)
 {
@@ -1157,3 +1229,4 @@ sub add_range
 
 1;
 
+=back
