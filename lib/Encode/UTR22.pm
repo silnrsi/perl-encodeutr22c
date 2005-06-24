@@ -215,6 +215,8 @@ sub process_file
             else
             { $current->add_elements(map {pack('U0U', hex($_))} $str =~ m/\G\s*([0-9a-fA-F]{4,6})\s*/og); }
         }
+        elsif ($str !~ /^\s*$/ && !$xml->in_element('modified'))
+        {error($xml, undef, "unexpected text '$str' ignored"); }
     });
 
     if ($attrs{'-path'})
@@ -988,6 +990,7 @@ sub debug_blist
 }
 
 package Encode::UTR22::Regexp::Element;
+use Carp;
 
 sub new
 {
@@ -1004,10 +1007,14 @@ sub add_child
 
     $child->{'parent'} = $self;
     push (@{$self->{'child'}}, $child);
-    if ($child->{'id'})
-    { $self->{'named'}{$child->{'id'}} = $child; }
-    elsif ($child->{'name'})
-    { $self->{'named'}{$child->{'name'}} = $child; }
+    my $name = $child->{'id'} || $child->{'name'};
+    if ($name)
+    {
+    	if (defined $self->{'named'}{$name})
+    	{ carp("child with duplicate name at line $child->{'line'}"); }
+    	else
+    	{ $self->{'named'}{$name} = $child; }
+    }
     $child;
 }
 
