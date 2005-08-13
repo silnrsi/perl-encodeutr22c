@@ -41,11 +41,15 @@ Hash, indexed by classname, returning L<Encode::UTR22::Regexp::class|Encode::UTR
 
 =item 'rules'
 
-Array of rules, each rule being a hash.
+Array of rules, each rule being a hash. 
 
 =item 'contexts'
 
 Hash, indexed by contextname, returning L<Encode::UTR22::Regexp::group|Encode::UTR22::Regexp::group> object representing a context expression.
+
+=item 'orders'
+
+Hash, indexed by 'bytes' or 'unicode', returning hash containing ordering elements 'b', 'u', 'bctxt', 'actxt'
 
 =back
 
@@ -60,7 +64,7 @@ use Encode;
 use Carp;
 use strict;
 
-use vars qw($current $curr_side $VERSION);
+use vars qw($curr_side $VERSION);
 
 $VERSION = 0.02;    #   MJPH     7-JUL-2004     Add bctxt to reorder rules
 
@@ -103,6 +107,8 @@ sub process_file
         'eos' => 'Encode::UTR22::Regexp::EOS'
         );
 
+	my $current ;
+	
     $xml->setHandlers('Start' => sub {
         my ($xml, $tag, %attrs) = @_;
         my ($this, $temp);
@@ -1018,6 +1024,44 @@ sub add_child
     $child;
 }
 
+# returns two-element array containing minimum and maximum length of the resultant regex element
+
+sub count
+{
+	my $self = shift;
+	my ($mymin, $mymax);
+	
+	if (exists $self->{'child'} && $#{$self->{'child'}} >= 0)
+	{
+		foreach (@{$self->{'child'}})
+		{
+			unless (defined $mymin)
+			{
+				($mymin, $mymax) = $_->count();
+			}
+			else
+			{
+				my ($cmin, $cmax) = $_->count();
+				if ($self->{'alt'})
+				{
+					$mymin = $cmin if $cmin < $mymin;
+					$mymax = $cmax if $cmax > $mymax;
+				}
+				else
+				{
+					$mymin += $cmin;
+					$mymax += $cmax;
+				}
+			}
+		}
+	}
+	else
+	{ $mymin = $mymax = 0; }
+	$mymin *= $self->{'min'} if defined $self->{'min'};
+	$mymax *= $self->{'max'} if defined $self->{'max'};
+	return ($mymin, $mymax);
+}
+
 sub as_error
 { $_[0]->{'id'}; }
 
@@ -1087,6 +1131,15 @@ package Encode::UTR22::Regexp::classRef;
 use vars qw(@ISA);
 
 BEGIN { @ISA = qw(Encode::UTR22::Regexp::Element); }
+
+sub count
+{
+	my $self = shift;
+	my ($min, $max);
+	$min = defined $self->{'min'} ? $self->{'min'} : 1;
+    $max = defined $self->{'max'} ? $self->{'max'} : 1;
+    return ($min, $max);
+}
 
 sub as_perl
 {
