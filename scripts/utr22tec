@@ -3,7 +3,8 @@ use Getopt::Std;
 use IO::File;
 use Compress::Zlib;
 
-$VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
+$VERSION = 0.03;    # MJPH  22-SEP-2005     refix old offsets bug
+# $VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
 # $VERSION = 0.01;    # MJPH   7-SEP-2002     Original
 
 getopts('z');
@@ -426,7 +427,7 @@ sub compile_order
         $mpre = $lpre if ($lpre > $mpre);
         $mpost = $lpost if ($lpost > $mpost);
         
-        push (@toffsets, length($lkup));
+        push (@toffsets, $toffsets[-1] + length($lkup));
         $lkup = pack('CCCCa*a*a*a*', length($tec) / 4, length($atec) / 4, length($btec) / 4, length($outtec) / 4, $tec, $atec, $btec, $outtec);
         push (@teclist, $lkup);
         

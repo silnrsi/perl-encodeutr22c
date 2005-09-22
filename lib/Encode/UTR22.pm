@@ -995,6 +995,8 @@ sub debug_blist
     return join(" ", @res);
 }
 
+no strict 'refs';
+
 package Encode::UTR22::Regexp::Element;
 use Carp;
 
@@ -1073,27 +1075,28 @@ BEGIN { @ISA = qw(Encode::UTR22::Regexp::Element); }
 
 sub as_perl
 {
-    my ($self, $atstart) = @_;
+    my ($self, $atstart, %opts) = @_;
     my ($r, $res, $names, $count, $text, $sub, $subl, $lacc);
     my ($min, $max);
+    my ($fn) = $opts{'-fn'} || "as_perl";
 
     $min = defined $self->{'min'} ? $self->{'min'} : 1;
     $max = defined $self->{'max'} ? $self->{'max'} : 1;
 
     $names = [];
-    if ($self->{'id'} ne '')
+    if ($self->{'id'} ne '' && !$opts{'-noref'})
     {
         $res = "(";
         $names = [$self->{'id'}];
     }
-    
+
     if ($self->{'id'} eq '' || $min != 1 || $max != 1)
     { $res .= "(?:"; }
 
     $lacc = 0;
     foreach $r (@{$self->{'child'}})
     {
-        ($text, $sub, $subl) = @{$r->as_perl($atstart)};
+        ($text, $sub, $subl) = @{$r->${fn}($atstart, %opts)};
         if (defined $self->{'alt'})
         {
             if ($count)
@@ -1120,7 +1123,7 @@ sub as_perl
         { $res .= "{$max}"; }
     } elsif ($min == 0)
     { $res .= "?"; }
-    $res .= ")" if ($self->{'id'} ne '');
+    $res .= ")" if ($self->{'id'} ne '' && !$opts{'-noref'});
     
     return [$res, $names, $lacc * $max];
 }
@@ -1143,7 +1146,7 @@ sub count
 
 sub as_perl
 {
-    my ($self, $atstart) = @_;
+    my ($self, $atstart, %opts) = @_;
     my ($class) = $self->{'owner'}{'classes'}{$self->{'name'}};
     my ($res, $temp, $wrap);
     my ($min, $max);
@@ -1166,7 +1169,7 @@ sub as_perl
         $temp =~ s/([$%\\^&*(){}\[\]|+"'?\/.`~\-])/\\$1/og;
         $temp =~ s/([^\x21-\x7e])/sprintf("\\x{%04X}", unpack('U', $1))/oge;
     }
-    $res = "(" if ($self->{'id'});
+    $res = "(" if ($self->{'id'} && !$opts{'-noref'});
     $wrap = ($#{$class->{'elements'}} > 0 || defined $self->{'neg'} || $min != 1 || $max != 1);
     $res .= "[" if $wrap;
     $res .= '^' if (defined $self->{'neg'});
@@ -1184,7 +1187,7 @@ sub as_perl
     
     if ($self->{'id'})
     {
-        $res .= ')';
+        $res .= ')' unless ($opts{'-noref'});
         return [$res, [$self->{'id'}], $max];
     }
     else
@@ -1200,9 +1203,10 @@ BEGIN { @ISA = qw(Encode::UTR22::Regexp::Element); }
 
 sub as_perl
 {
-    my ($self, $atstart) = @_;
+    my ($self, $atstart, %opts) = @_;
     my ($ref, $n, $res, $ind, $temp, $len, $id);
 
+    my ($fn) = $opts{'-fn'} || "as_perl";
     unless ($self->{'name'})
     {
         print STDERR "No name attribute in context-ref at line $self->{'line'}\n";
@@ -1229,9 +1233,9 @@ sub as_perl
         $temp = bless {%$ref}, ref $ref;
         $temp->{'max'} = $self->{'max'} if defined $self->{'max'};
         $temp->{'min'} = $self->{'min'} if defined $self->{'min'};
-        ($res, $ind, $len) = @{$temp->as_perl($atstart)};
+        ($res, $ind, $len) = @{$temp->${fn}($atstart, %opts)};
     } else
-    { ($res, $ind, $len) = @{$ref->as_perl($atstart)}; }
+    { ($res, $ind, $len) = @{$ref->${fn}($atstart, %opts)}; }
 
     $id = $self->{'id'} || $self->{'name'};
     foreach $n (@{$ind}) { $n =~ s|^[^/]+|$id|o; }
@@ -1247,7 +1251,7 @@ BEGIN { @ISA = qw(Encode::UTR22::Regexp::Element); }
 
 sub as_perl
 {
-    my ($self, $atstart) = @_;
+    my ($self, $atstart, %opts) = @_;
 
     return [$atstart ? '^' : '$', [], 0];
 }
