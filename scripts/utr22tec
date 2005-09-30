@@ -1,9 +1,12 @@
+#!/usr/bin/perl
+
 use Encode::UTR22;
 use Getopt::Std;
 use IO::File;
 use Compress::Zlib;
 
-$VERSION = 0.03;    # MJPH  22-SEP-2005     refix old offsets bug
+$VERSION = 0.04;    # MJPH  30-SEP-2005     handle -ve classes as first rule of reorder
+# $VERSION = 0.03;    # MJPH  22-SEP-2005     refix old offsets bug
 # $VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
 # $VERSION = 0.01;    # MJPH   7-SEP-2002     Original
 
@@ -34,6 +37,14 @@ binmode $outfh;
 #foreach $r (sort {$self->{'contexts'}{$a}{'line'} <=> $self->{'contexts'}{$b}{'line'}}
 #            keys %{$self->{'contexts'}})
 #{ $self->{'regexps'}{$r} = $self->{'contexts'}{$r}->asTec(); }
+
+foreach $r (@{$enc->{'rules'}})
+{
+    foreach (split('', $r->{'b'}))
+    { $enc->{'ranges'}{'b'}{$_}++; }
+    foreach (split('', $r->{'u'}))
+    { $enc->{'ranges'}{'u'}{$_}++; }
+}
 
 $hdr = create_header($outfh, $enc);
 push (@tables, pad($outfh));
@@ -431,7 +442,7 @@ sub compile_order
         $lkup = pack('CCCCa*a*a*a*', length($tec) / 4, length($atec) / 4, length($btec) / 4, length($outtec) / 4, $tec, $atec, $btec, $outtec);
         push (@teclist, $lkup);
         
-        foreach $num ($self->{'contexts'}{$r->{$srcl}}->findfirst())
+        foreach $num ($self->{'contexts'}{$r->{$srcl}}->findfirst($self->{'ranges'}{$srcl}))
         { $firsts{$num} |= (1 << $count); }
         
         $count++;
@@ -447,6 +458,7 @@ sub compile_order
             $ocount = $vcount;
             for ($i = 0, $j = 1; $j <= $firsts{$k}; $i++, $j <<= 1)
             {
+                next unless (($firsts{$k} & $j) != 0);
                 push(@moffsets, $toffsets[$i]);
                 $vcount++;
             }
@@ -541,12 +553,12 @@ sub asTec
 
 sub findfirst
 {
-    my ($self) = @_;
+    my ($self, $range) = @_;
     my ($r, %res, @res1);
     
     foreach $r (@{$self->{'child'}})
     {
-        @res1 = $r->findfirst();
+        @res1 = $r->findfirst($range);
         map {$res{$_} = 1} @res1;
         last if (!defined $self->{'alt'} && (!defined $r->base()->{'min'} || $r->base()->{'min'} != 0));
     }
@@ -588,10 +600,18 @@ sub asTec
 
 sub findfirst
 {
-    my ($self) = @_;
+    my ($self, $range) = @_;
     my ($class) = $self->{'owner'}{'classes'}{$self->{'name'}};
 
-    return @{$class->{'elements'}};
+    if ($self->{'neg'})
+    {
+        my (%t) = map {$_ => 1} @{$class->{'elements'}};
+        print STDERR "%t = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} keys %t) . ")\n";
+        print STDERR "%range = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} keys %{$range}) . ")\n";
+        return grep {!defined $t{$_}} keys %{$range};
+    }
+    else
+    { return @{$class->{'elements'}}; }
 }
 
 package Encode::UTR22::Regexp::contextRef;
@@ -651,7 +671,7 @@ sub asTec
 
 sub findfirst
 {
-    my ($self) = @_;
+    my ($self, $range) = @_;
     my ($ref, $n);
     
     $ref = $self->base() || return ();
