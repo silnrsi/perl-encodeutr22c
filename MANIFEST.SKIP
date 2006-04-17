@@ -5,6 +5,7 @@ blib/
 CVS/
 \.tar
 \.zip
+\.tgz
 misc/
 Build/
 exes/
@@ -13,3 +14,4 @@ dev/
 release/
 ^#
 \.svn/
+\~$

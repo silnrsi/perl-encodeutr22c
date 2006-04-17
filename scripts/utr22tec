@@ -17,12 +17,13 @@ getopts('z');
 
 unless (defined $ARGV[1])
 {
-    die <<'EOT';
+    die <<"EOT";
     utr22tec [-z] infile outfile
 Compiles the given UTR22 XML mapping description into a SILtec binary file
 for use with SILtec.
 
     -z  Produce uncompressed file
+version: $VERSION
 EOT
 }
 
@@ -41,9 +42,9 @@ binmode $outfh;
 foreach $r (@{$enc->{'rules'}})
 {
     foreach (split('', $r->{'b'}))
-    { $enc->{'ranges'}{'b'}{$_}++; }
+    { $enc->{'ranges'}{'bytes'}{$_}++; }
     foreach (split('', $r->{'u'}))
-    { $enc->{'ranges'}{'u'}{$_}++; }
+    { $enc->{'ranges'}{'unicode'}{$_}++; }
 }
 
 $hdr = create_header($outfh, $enc);
@@ -442,7 +443,7 @@ sub compile_order
         $lkup = pack('CCCCa*a*a*a*', length($tec) / 4, length($atec) / 4, length($btec) / 4, length($outtec) / 4, $tec, $atec, $btec, $outtec);
         push (@teclist, $lkup);
         
-        foreach $num ($self->{'contexts'}{$r->{$srcl}}->findfirst($self->{'ranges'}{$srcl}))
+        foreach $num ($self->{'contexts'}{$r->{$srcl}}->findfirst($self->{'ranges'}{$side}))
         { $firsts{$num} |= (1 << $count); }
         
         $count++;
@@ -606,8 +607,8 @@ sub findfirst
     if ($self->{'neg'})
     {
         my (%t) = map {$_ => 1} @{$class->{'elements'}};
-        print STDERR "%t = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} keys %t) . ")\n";
-        print STDERR "%range = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} keys %{$range}) . ")\n";
+        print STDERR "%t = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %t) . ")\n";
+        print STDERR "%range = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %{$range}) . ")\n";
         return grep {!defined $t{$_}} keys %{$range};
     }
     else
