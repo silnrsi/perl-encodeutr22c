@@ -5,7 +5,8 @@ use Getopt::Std;
 use IO::File;
 use Compress::Zlib;
 
-$VERSION = 0.04;    # MJPH  30-SEP-2005     handle -ve classes as first rule of reorder
+$VERSION = 0.05;    # MJPH  17-APR-2006     Fix bug in error message and add version to help
+# $VERSION = 0.04;    # MJPH  30-SEP-2005     handle -ve classes as first rule of reorder
 # $VERSION = 0.03;    # MJPH  22-SEP-2005     refix old offsets bug
 # $VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
 # $VERSION = 0.01;    # MJPH   7-SEP-2002     Original
@@ -248,7 +249,7 @@ sub compile_map
                     || $a->[8]{'line'} <=> $b->[8]{'line'}} @{$r};
         
         error(undef, undef, "Ambiguous mapping from " . strerror($k, !$toBytes) . 
-                " at lines $r[-2][8]{'line'} and $r[-1][8]{'line'}")
+                " at lines $r->[-2][8]{'line'} and $r->[-1][8]{'line'}")
                 if (scalar @{$r} > 1 && $r->[-2][3] == 1 && $r->[-2][1] == 0 && $r->[-2][5] == 0);
         if (scalar @{$r} == 1)
         {
