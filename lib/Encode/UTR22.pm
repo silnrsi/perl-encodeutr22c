@@ -129,8 +129,10 @@ sub process_file
                     unless (defined $attrs{'b'} && defined $attrs{'u'});
             push(@{$xml->{' mycontext'}{'rules'}}, {
                     'line' => $xml->current_line,
-                    'b' => pack('C0C*', map {hex($_)} $attrs{'b'} =~ m/\G\s*([0-9a-fA-F]{2})\s*/og),
-                    'u' => pack('U0U*', map {hex($_)} $attrs{'u'} =~ m/\G\s*([0-9a-fA-F]{4,6})\s*/og),
+#                    'b' => pack('C0C*', map {hex($_)} $attrs{'b'} =~ m/\G\s*([0-9a-fA-F]{2})/og),
+#                    'u' => pack('U0U*', map {hex($_)} $attrs{'u'} =~ m/\G\s*([0-9a-fA-F]{4,6})/og),
+                    'b' => pack('C*', map {hex($_)} split(' ', $attrs{'b'})),
+                    'u' => pack('U*', map {hex($_)} split(' ', $attrs{'u'})),
                     'type' => $tag,
                     'bactxt' => $attrs{'bactxt'},
                     'bbctxt' => $attrs{'bbctxt'},
@@ -217,9 +219,11 @@ sub process_file
         if (defined $current && $current->can('add_elements'))
         {
             if ($current->{'size'} && $current->{'size'} eq 'bytes')
-            { $current->add_elements(map {pack('C0C', hex($_))} $str =~ m/\G\s*([0-9a-fA-F]{2})\s*/og); }
+            { $current->add_elements(map {pack('C', hex($_))} split(' ', $str)); }
+#            { $current->add_elements(map {pack('C0C', hex($_))} $str =~ m/\G\s*([0-9a-fA-F]{2})\s*/og); }
             else
-            { $current->add_elements(map {pack('U0U', hex($_))} $str =~ m/\G\s*([0-9a-fA-F]{4,6})\s*/og); }
+            { $current->add_elements(map {pack('U', hex($_))} split(' ', $str)); }
+#            { $current->add_elements(map {pack('U0U', hex($_))} $str =~ m/\G\s*([0-9a-fA-F]{4,6})\s*/og); }
         }
         elsif ($str !~ /^\s*$/ && !$xml->in_element('modified'))
         {error($xml, undef, "unexpected text '$str' ignored"); }
@@ -619,7 +623,7 @@ sub compile_map
             else
             {
                 $lres = $#temp + 1;
-                $res =~ s/([$%\\^&*(){}\[\]|"'?\/+.`~\-])/\\$1/ogs;
+                $res =~ s/([$%\\^&*(){}\[\]|"'?\/+.`~\-])/\\$1/ogs;         #"
                 $res =~ s/([^\x21-\x7e])/sprintf("\\x{%04X}", unpack('U', $1))/ogse;
                 push (@{$self->{"uconv"}{$first}}, [qr/$pre\G$res$post/, $r->{$destl}, $line,
                                                     $lres, $lpre, $lpost, $r->{'priority'}]);
@@ -641,7 +645,7 @@ sub compile_map
             else
             {
                 $lres = length($res);
-                $res =~ s/([$%\\^&*(){}\[\]|"'?\/+.`~\-])/\\$1/ogs;
+                $res =~ s/([$%\\^&*(){}\[\]|"'?\/+.`~\-])/\\$1/ogs;     #"
                 $res =~ s/([^\x21-\x7e])/sprintf("\\x%02x", ord($1))/ogse;
                 push (@{$self->{"bconv"}{$first}}, [qr/$pre\G$res$post/, $r->{$destl}, $line,
                                                     $lres, $lpre, $lpost, $r->{'priority'}]);
@@ -823,6 +827,17 @@ sub debug_reorder
         use utf8;
         $len = length($str);
     }
+    foreach $r (@{$rules})
+    {
+        if ($isbytes)
+        {
+            $debug .= "reorder(line $r->[2]): $r->[0] = ";
+            $debug .= " -> $r->[1]\n";
+        } else {
+            $debug .= "reorder(line $r->[2]): $r->[0] = ";
+            $debug .= " -> $r->[1])\n";
+        }
+    }
     while (pos($str) < $len)
     {
         $found = 0;
@@ -848,11 +863,11 @@ sub debug_reorder
             $res .= $temp;
             if ($isbytes)
             {
-                $debug .= "reorder(line $r->[2]): $r->[0] = " . join(",", map {debug_blist($_)} @ress);
+                $debug .= "reorder(line $r->[2]): " . join(",", map {debug_blist($_)} @ress);
                 $debug .= " -> $r->[1] = ";
                 $debug .= debug_blist($temp) . "\n\n";
             } else {
-                $debug .= "reorder(line $r->[2]): $r->[0] = " . join(",", map {debug_ulist($_)} @ress);
+                $debug .= "reorder(line $r->[2]): $r->[0]" . join(",", map {debug_ulist($_)} @ress);
                 $debug .= " -> $r->[1]) = ";
                 $debug .= debug_ulist($temp) . "\n\n";
             }
@@ -1012,17 +1027,22 @@ sub new
 sub add_child
 {
     my ($self, $child) = @_;
+    my ($name);
 
     $child->{'parent'} = $self;
     push (@{$self->{'child'}}, $child);
-    my $name = $child->{'id'} || $child->{'name'};
-    if ($name)
+    if ($name = $child->{'id'})
     {
     	if (defined $self->{'named'}{$name})
     	{ carp("child with duplicate name at line $child->{'line'}"); }
-    	else
-    	{ $self->{'named'}{$name} = $child; }
     }
+    else
+    {
+        $name = $child->{'name'};
+        while (defined $self->{'named'}{$name})
+        { $name =~ s/(\d*)$/$1 + 1/oe; }
+    }
+    $self->{'named'}{$name} = $child;
     $child;
 }
 
