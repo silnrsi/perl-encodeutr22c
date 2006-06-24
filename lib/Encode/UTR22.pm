@@ -6,22 +6,11 @@ Encode::UTR22 - Implement Unicode TR22 complex conversions
 
 =head1 DESCRIPTION
 
-Implements all of UTR22 except:
+Implements all of UTR22 except: validity, header, bidirectional re-ordering,
+history, v attribute for versioning, aliases - that's the job of another module
+fbu and fub are treated synonymously with single directional a, with equal priority
 
-    validity
-    negative regular expression groups
-    header
-    bidirectional re-ordering
-    history
-    v attribute for versioning
-    aliases - that's the job of another module
-    fbu and fub are treated synonymously with single directional a, with equal priority
-
-Features of this module
-
-    There is some error checking of description files to help those writing them
-    It's slow at the moment!
-    Supports priority attribute
+Supports UTR22c extensions including: contexts, reordering
 
 =head1 INSTANCE VARIABLES
 
@@ -1313,4 +1302,7 @@ sub add_range
 
 1;
 
-=back
+=head1 COPYRIGHT
+
+This module is copyright SIL International and is distributed under the same terms as Perl itself.
+

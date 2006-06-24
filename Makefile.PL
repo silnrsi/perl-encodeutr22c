@@ -4,7 +4,13 @@ use ExtUtils::MakeMaker;
 #@theselibs = grep {-f } glob("lib/Font/TTF/*");
 
 # incantation to enable MY::pm_to_blib later on
-push(@ExtUtils::MakeMaker::Overridable, qw(pm_to_blib)) if ($^O eq 'MSWin32');
+if ($^O eq 'MSWin32')
+{
+    push(@ExtUtils::MakeMaker::Overridable, qw(pm_to_blib));
+    @extras = (
+        dist => { 'TO_UNIX' => 'perl -Mtounix -e "tounix(\"$(DISTVNAME)\")"' }
+    );
+}
 
 WriteMakefile (
         NAME => "Encode::UTR22",
@@ -14,7 +20,7 @@ WriteMakefile (
 #        HTMLSCRIPTPODS => {map {my $t=$_; $t=~s/\..*?$/.html/o; $t='blib/Html/'.$t; $_ => $t;} @scripts},
         AUTHOR => "martin_hosken\@sil.org",
         ABSTRACT => "UTR22c support for Perl",
-        dist => { 'TO_UNIX' => 'perl -Mtounix -e "tounix(\"$(DISTVNAME)\")"' }
+	@extras
     );
 
 if ($^O eq 'MSWin32') {
@@ -38,4 +44,6 @@ EOT
 }
 
 }
+
+1;
 
