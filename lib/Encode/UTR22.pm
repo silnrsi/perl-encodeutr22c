@@ -49,13 +49,15 @@ Hash, indexed by 'bytes' or 'unicode', returning hash containing ordering elemen
 require 5.8.0;
 
 use XML::Parser::Expat;
+use Unicode::Normalize;
 use Encode;
 use Carp;
 use strict;
 
 use vars qw($curr_side $VERSION);
 
-$VERSION = 0.02;    #   MJPH     7-JUL-2004     Add bctxt to reorder rules
+$VERSION = 0.03;    #   MJPH     6-FEB-2004     Add Normalization to encode()
+# $VERSION = 0.02;    #   MJPH     7-JUL-2004     Add bctxt to reorder rules
 
 =over 8
 
@@ -360,6 +362,11 @@ sub encode($$;$)
 
     return undef unless ($self->{'usimple'} || $self->{'uconv'});
 
+    if ($self->{'info'}{'normalization'} eq 'NFD')
+    { $str = NFD($str); }
+    elsif ($self->{'info'}{'normalization'} eq 'NFC')
+    { $str = NFC($str); }
+
     Encode::_utf8_off($res);
 
     $str = $self->reorder($str, $self->{'uorder'}[0], 0) if (defined $self->{'uorder'}[0]);
@@ -411,6 +418,11 @@ sub debug_decode
     my ($res, $len, $c, $temp, $r, $count, $tpos, $found, $debug, $debstr);
 
     return undef unless ($self->{'bsimple'} || $self->{'bconv'});
+
+    if ($self->{'info'}{'normalization'} eq 'NFD')
+    { $str = NFD($str); }
+    elsif ($self->{'info'}{'normalization'} eq 'NFC')
+    { $str = NFC($str); }
 
     Encode::_utf8_on($res);
 
