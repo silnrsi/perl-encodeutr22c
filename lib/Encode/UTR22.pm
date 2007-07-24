@@ -419,11 +419,6 @@ sub debug_decode
 
     return undef unless ($self->{'bsimple'} || $self->{'bconv'});
 
-    if ($self->{'info'}{'normalization'} eq 'NFD')
-    { $str = NFD($str); }
-    elsif ($self->{'info'}{'normalization'} eq 'NFC')
-    { $str = NFC($str); }
-
     Encode::_utf8_on($res);
 
     ($str, $debug) = $self->debug_reorder($str, $self->{'border'}[0], 1) if (defined $self->{'border'}[0]);
@@ -494,6 +489,11 @@ sub debug_encode
     my ($res, $len, $c, $temp, $r, $tpos, $found, $debug, $debstr);
 
     return undef unless ($self->{'usimple'} || $self->{'uconv'});
+
+    if ($self->{'info'}{'normalization'} eq 'NFD')
+    { $str = NFD($str); }
+    elsif ($self->{'info'}{'normalization'} eq 'NFC')
+    { $str = NFC($str); }
 
     Encode::_utf8_off($res);
 

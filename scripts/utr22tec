@@ -11,7 +11,7 @@ $VERSION = 0.05;    # MJPH  17-APR-2006     Fix bug in error message and add ver
 # $VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
 # $VERSION = 0.01;    # MJPH   7-SEP-2002     Original
 
-getopts('z');
+getopts('vz');
 
 *error = \&Encode::UTR22::error;
 *strerror = \&Encode::UTR22::strerror;
@@ -19,10 +19,11 @@ getopts('z');
 unless (defined $ARGV[1])
 {
     die <<"EOT";
-    utr22tec [-z] infile outfile
+    utr22tec [-v] [-z] infile outfile
 Compiles the given UTR22 XML mapping description into a SILtec binary file
 for use with SILtec.
 
+    -v  Give more information
     -z  Produce uncompressed file
 version: $VERSION
 EOT
@@ -608,8 +609,11 @@ sub findfirst
     if ($self->{'neg'})
     {
         my (%t) = map {$_ => 1} @{$class->{'elements'}};
-        print STDERR "%t = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %t) . ")\n";
-        print STDERR "%range = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %{$range}) . ")\n";
+        if ($main::opt_v)
+        {
+            print STDERR "Negative class($self->{'name'}): %t = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %t) . ")\n";
+            print STDERR "over: %range = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %{$range}) . ")\n";
+        }
         return grep {!defined $t{$_}} keys %{$range};
     }
     else
@@ -678,7 +682,7 @@ sub findfirst
     
     $ref = $self->base() || return ();
     
-    return $ref->findfirst();
+    return $ref->findfirst($range);
 }    
 
 

@@ -20,6 +20,10 @@ WriteMakefile (
 #        HTMLSCRIPTPODS => {map {my $t=$_; $t=~s/\..*?$/.html/o; $t='blib/Html/'.$t; $_ => $t;} @scripts},
         AUTHOR => "martin_hosken\@sil.org",
         ABSTRACT => "UTR22c support for Perl",
+        PREREQ_PM => {
+            'Compress::Zlib' => 0,
+            'Unicode::Normalize' => 0,
+        },        
 	@extras
     );
 
