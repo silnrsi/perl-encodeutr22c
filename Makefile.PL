@@ -14,7 +14,7 @@ if ($^O eq 'MSWin32')
 
 WriteMakefile (
         NAME => "Encode::UTR22",
-        VERSION => "0.13",
+        VERSION => "0.14",
         EXE_FILES => \@scripts,
 #        HTMLLIBPODS => {map {my $t = $_; $t=~s/\..*?$/.html/o; $t='blib/Html/'.$t; $_ => $t;} @theselibs},
 #        HTMLSCRIPTPODS => {map {my $t=$_; $t=~s/\..*?$/.html/o; $t='blib/Html/'.$t; $_ => $t;} @scripts},

@@ -5,7 +5,8 @@ use Getopt::Std;
 use IO::File;
 use Compress::Zlib;
 
-$VERSION = 0.05;    # MJPH  17-APR-2006     Fix bug in error message and add version to help
+$VERSION = 0.06;    # MJPH  12-FEB-2008     fix mapping to deletion
+# $VERSION = 0.05;    # MJPH  17-APR-2006     Fix bug in error message and add version to help
 # $VERSION = 0.04;    # MJPH  30-SEP-2005     handle -ve classes as first rule of reorder
 # $VERSION = 0.03;    # MJPH  22-SEP-2005     refix old offsets bug
 # $VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
@@ -256,12 +257,12 @@ sub compile_map
         {
             if ($r->[0][1] != 0 || $r->[0][5] != 0)
             { error(undef, undef, "No default mapping for ". strerror($k, !$toBytes)); }
-            elsif ($toBytes && $r->[0][7] < 4)
+            elsif ($toBytes && $r->[0][7] < 4 && $r->[0][7] > 0)
             {
                 $self->{"${srcl}map"}{$k} = pack('C4', length($r->[0][8]{$destl}), unpack('C*', $r->[0][8]{$destl}));
                 next;
             }
-            elsif (!$toBytes && $r->[0][7] < 2)
+            elsif (!$toBytes && $r->[0][7] < 2 && $r->[0][7] > 0)
             {
                 my ($gen) = unpack('U', $r->[0][8]{$destl});
                 $self->{"${srcl}map"}{$k} = pack('CCn', 0, $gen >> 16, $gen & 0xFFFF);      #opcode should be 1
