@@ -1,0 +1,13 @@
+libencode-utr22-perl (0.13-1.1) hardy; urgency=low
+
+  * Non-maintainer upload.
+  * 
+
+ -- Martin Hosken <martin_hosken@sil.org>  Thu, 06 Nov 2008 15:28:03 -0500
+
+libencode-utr22-perl (0.13-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Martin Hosken <martin_hosken@sil.org>  Wed, 14 Jun 2006 11:19:09 +0700
+

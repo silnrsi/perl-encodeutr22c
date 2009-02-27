@@ -1,0 +1,19 @@
+Source: libencode-utr22-perl
+Section: perl
+Priority: optional
+Build-Depends: debhelper (>= 4.0.2)
+Build-Depends-Indep: perl (>= 5.8.0-7)
+Maintainer: Martin Hosken <martin_hosken@sil.org>
+Standards-Version: 3.6.1
+
+Package: libencode-utr22-perl
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, 
+Description:  Implement Unicode TR22 complex conversions
+ Implements all of UTR22 except: validity, header, bidirectional re-ordering,
+ history, v attribute for versioning, aliases - that's the job of another module
+ fbu and fub are treated synonymously with single directional a, with equal priority
+ .
+ Supports UTR22c extensions including: contexts, reordering
+ .
+ This description was automagically extracted from the module by dh-make-perl.
