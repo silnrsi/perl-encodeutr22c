@@ -377,7 +377,7 @@ sub encode($$;$)
     {
         $found = 0;
         $temp = pos($str);
-        $str =~ m/\G(.)/ogcs;
+        $str =~ m/\G(.)/gcs;
         $c = $1;
         $tpos = pos($str);
         pos($str) = $temp;
@@ -432,7 +432,8 @@ sub debug_decode
         $temp = pos($str);
         $str =~ m/\G(.)/ogcs;
         $c = $1;
-        $tpos = pos($str);
+#        $tpos = pos($str);
+        $tpos = $temp + bytes::length($c);
         pos($str) = $temp;
         
         if (defined $self->{'bconv'}{$c})
@@ -507,9 +508,10 @@ sub debug_encode
         use utf8;
         $found = 0;
         $temp = pos($str);
-        $str =~ m/\G(.)/ogcs;
+        $str =~ m/\G(.)/gcs;
         $c = $1;
-        $tpos = pos($str);
+#        $tpos = pos($str);
+        $tpos = $temp + bytes::length($c);
         pos($str) = $temp;
         
         if (defined $self->{'uconv'}{$c})
