@@ -386,10 +386,20 @@ sub encode($$;$)
         {
             foreach $r (@{$self->{'uconv'}{$c}})
             {
-                if ($str =~ m/$r->[0]/gcs)
+                if ($^V eq "v5.10")
+                {
+                    my ($pre, $post) = $r->[0] =~ m/^\((.*?)\\G(.*)\)$/o;
+                    $found = (substr($str, 0, $temp) =~ m/($pre)$/s &&
+                              substr($str, $temp) =~ m/^$post/s);
+                    pos($str) += length($&) if ($found);
+                }
+                else
+                {
+                    $found = ($str =~ m/$r->[0]/gcs);
+                }
+                if ($found)
                 {
                     $res .= $r->[1];
-                    $found = 1;
                     last;
                 }
             }
@@ -432,8 +442,8 @@ sub debug_decode
         $temp = pos($str);
         $str =~ m/\G(.)/ogcs;
         $c = $1;
-#        $tpos = pos($str);
-        $tpos = $temp + bytes::length($c);
+        $tpos = pos($str);
+#        $tpos = $temp + bytes::length($c);
         pos($str) = $temp;
         
         if (defined $self->{'bconv'}{$c})
@@ -510,20 +520,31 @@ sub debug_encode
         $temp = pos($str);
         $str =~ m/\G(.)/gcs;
         $c = $1;
-#        $tpos = pos($str);
-        $tpos = $temp + bytes::length($c);
+        $tpos = pos($str);
+#        $tpos = $temp + bytes::length($c);
         pos($str) = $temp;
         
         if (defined $self->{'uconv'}{$c})
         {
             foreach $r (@{$self->{'uconv'}{$c}})
             {
-                if ($str =~ m/$r->[0]/gcs)
+                use utf8;
+                if ($^V eq "v5.10")
+                {
+                    my ($pre, $post) = $r->[0] =~ m/^\((.*?)\\G(.*)\)$/o;
+                    $found = (substr($str, 0, $temp) =~ m/($pre)$/s &&
+                              substr($str, $temp) =~ m/^$post/s);
+                    pos($str) += length($&) if ($found);
+                }
+                else
+                {
+                    $found = ($str =~ m/$r->[0]/gcs);
+                }
+                if ($found)
                 {
                     $res .= $r->[1];
                     $debug .= "matched line $r->[2]: " . debug_ulist($str, $temp) . " =~ $r->[0] -> " 
                         . debug_blist($r->[1]) . "\n\n";
-                    $found = 1;
                     last;
                 }
                 else
