@@ -952,7 +952,7 @@ sub process_range
                     'ubctxt' => $attrs{'ubctxt'},
                     'priority' => $attrs{'priority'}});
         last if $i == $uLast;
-        for ($j = 0; $j <= $#current; $j++)
+        for ($j = $#current; $j >= 0; $j--)
         {
             $current[$j]++;
             if (defined $max[$j] && $current[$j] > $max[$j])
