@@ -113,7 +113,7 @@ foreach $enc (@inencs)
     $enccount++;
 }
 
-$enccount = 0;
+$enccount = $#inencs;
 foreach $enc (reverse @inencs)
 {
     my $src = ($reverse[$enccount] ? 'unicode' : 'bytes');
@@ -132,7 +132,7 @@ foreach $enc (reverse @inencs)
         compile_order($enc, $rrev, $src, $outfh);
         push (@tables, pad($outfh));
     }
-    $enccount++;
+    $enccount--;
 }
 
 delete $tables[-1];
@@ -187,7 +187,6 @@ sub create_header
     my ($outfh, $encs, $revs) = @_;
     my ($val, $count, $str, @strs, $numtables, $normal, $stroffset, $noffset);
     my ($enc, $lastenc, $enccount, $lnormal);
-    $numtables = 1;
 
     foreach $enc (@{$encs})
     {
@@ -216,8 +215,9 @@ sub create_header
             }
         }
     
-        $numtables++ if (scalar @{$enc->{'orders'}{'unicode'}});
-        $numtables++ if (scalar @{$enc->{'orders'}{'bytes'}});
+        $numtables++ if (defined $enc->{'orders'}{'unicode'} and scalar @{$enc->{'orders'}{'unicode'}});
+        $numtables++ if (defined $enc->{'orders'}{'bytes'} and scalar @{$enc->{'orders'}{'bytes'}});
+        $numtables++;
 
         if ($enccount == $#{$encs} && !$revs->[$enccount])
         {
