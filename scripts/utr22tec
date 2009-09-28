@@ -53,7 +53,10 @@ EOT
 
 foreach $ef (@infiles)
 {
-    push(@inencs, Encode::UTR22->process_file($ef) || die "Can't read mapping file $ef");
+    if ($ef =~ m/\.tec$/oi)
+    { push(@inencs, Encode::Tec->open($ef)); }
+    else
+    { push(@inencs, Encode::UTR22->process_file($ef) || die "Can't read mapping file $ef"); }
 }
 
 if (!$opt_z)
@@ -66,7 +69,7 @@ binmode $outfh;
 #            keys %{$self->{'contexts'}})
 #{ $self->{'regexps'}{$r} = $self->{'contexts'}{$r}->asTec(); }
 
-$hdr = create_header($outfh, \@inencs);
+$hdr = create_header($outfh, \@inencs, \@reverse);
 push (@tables, pad($outfh));
 
 $enccount = 0;
@@ -76,25 +79,36 @@ foreach $enc (@inencs)
     my $tgt = ($reverse[$enccount] ? 'bytes' : 'unicode');
     my $rrev = ($reverse[$enccount] ? '0' : '1');
 
-    foreach $r (@{$enc->{'rules'}})
+    if ($enc->isa('Encode::Tec'))
     {
-        foreach (split('', $r->{'b'}))
-        { $enc->{'ranges'}{'bytes'}{$_}++; }
-        foreach (split('', $r->{'u'}))
-        { $enc->{'ranges'}{'unicode'}{$_}++; }
+        foreach my $t (@{$enc->{($reverse[$enccount] ? "r" : "f") . "_tables"}})
+        {
+            $outfh->print($t);
+            push (@tables, pad($outfh));
+        }
     }
+    else
+    {
+        foreach $r (@{$enc->{'rules'}})
+        {
+            foreach (split('', $r->{'b'}))
+            { $enc->{'ranges'}{'bytes'}{$_}++; }
+            foreach (split('', $r->{'u'}))
+            { $enc->{'ranges'}{'unicode'}{$_}++; }
+        }
 
-    if ($enc->{'orders'}{$src})
-    {
-        compile_order($enc, $reverse[$enccount], $src, $outfh);
+        if ($enc->{'orders'}{$src})
+        {
+            compile_order($enc, $reverse[$enccount], $src, $outfh);
+            push (@tables, pad($outfh));
+        }
+        compile_map($enc, $reverse[$enccount], $outfh);
         push (@tables, pad($outfh));
-    }
-    compile_map($enc, $reverse[$enccount], $outfh);
-    push (@tables, pad($outfh));
-    if ($enc->{'orders'}{$tgt})
-    {
-        compile_order($enc, $reverse[$enccount], $tgt, $outfh);
-        push (@tables, pad($outfh));
+        if ($enc->{'orders'}{$tgt})
+        {
+            compile_order($enc, $reverse[$enccount], $tgt, $outfh);
+            push (@tables, pad($outfh));
+        }
     }
     $enccount++;
 }
@@ -170,9 +184,9 @@ sub pad
 
 sub create_header
 {
-    my ($outfh, $encs) = @_;
+    my ($outfh, $encs, $revs) = @_;
     my ($val, $count, $str, @strs, $numtables, $normal, $stroffset, $noffset);
-    my ($enc, $lastenc, $enccount);
+    my ($enc, $lastenc, $enccount, $lnormal);
     $numtables = 1;
 
     foreach $enc (@{$encs})
@@ -190,12 +204,22 @@ sub create_header
                 $str .= "\000" if (length($str) & 1);
                 push (@strs, $str);
             }
+            if ($revs->[$enccount])
+            {
+                if ($enc->{'info'}{'normalization'} eq 'NFD')
+                { $lnormal = 10; }
+                elsif ($enc->{'info'}{'normalization'} eq 'NFC')
+                { $lnormal = 5; }
+                elsif ($enc->{'info'}{'normalization'} eq 'NFC_NFD')
+                { $lnormal = 12; }
+                $lnormal |= 0x10000;
+            }
         }
     
         $numtables++ if (scalar @{$enc->{'orders'}{'unicode'}});
         $numtables++ if (scalar @{$enc->{'orders'}{'bytes'}});
 
-        if ($enccount == $#{$encs})
+        if ($enccount == $#{$encs} && !$revs->[$enccount])
         {
             $normal = 0;
             if ($enc->{'info'}{'normalization'} eq 'NFD')
@@ -228,7 +252,7 @@ sub create_header
     }
     
     $outfh->print(pack("a4N7a*N${numtables}N${numtables}a*",
-        'qMap', 0x00020001, $noffset, 0, $normal, scalar @strs, $numtables, $numtables,
+        'qMap', 0x00020001, $noffset, $lnormal, $normal, scalar @strs, $numtables, $numtables,
         $stroffset,
         (0) x $numtables, (0) x $numtables, join('', @strs)));
         
