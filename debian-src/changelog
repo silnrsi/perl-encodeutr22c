@@ -1,3 +1,36 @@
+libencode-utr22-perl (0.15) lucid; urgency=low
+
+  * Non-maintainer upload.
+  * r656: More fixes to utr22tec still need to work on .tec input though.
+  * r655: Add Tec.pm and fix utr22tec to handle unicode <> unicode chains.
+  * r653: Add chaining to utr22tec.
+  * r622: Work around 5.10 bug that anything before \G in a Unicode match doesn't work.
+  * r621: Fix UTR22.pm encode for 5.10.
+
+ -- Tim Eves <tim_eves@sil.org>  Fri, 4 Jun 2009 10:14:13 +0700
+
+libencode-utr22-perl (0.14-1jaunty1) jaunty; urgency=low
+
+  * Non-maintainer upload.
+
+ -- Martin Hosken <martin_hosken@sil.org>  Wed, 01 Apr 2009 09:32:53 +0100
+
+libencode-utr22-perl (0.13-1.3) intrepid; urgency=low
+
+  * Non-maintainer upload
+    There is a bug in perl 5.10 wrt anchors in regexp and unicode strings.
+    This applies a workaround supplied by Martin Hosken.
+    
+ -- Tim Eves <tim_eves@sil.org>  Fri, 27 Feb 2009 13:32:19 +0700
+
+libencode-utr22-perl (0.13-1.2) intrepid; urgency=low
+
+  * Non-maintainer upload
+    Install the PDF Manual & examples to the /usr/share/doc documentation 
+    directory.
+  
+ -- Tim Eves <tim_eves@sil.org>  Fri, 27 Feb 2009 13:32:19 +0700
+
 libencode-utr22-perl (0.13-1.1) hardy; urgency=low
 
   * Non-maintainer upload.
