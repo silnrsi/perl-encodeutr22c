@@ -2,6 +2,7 @@
 
 use Encode::UTR22;
 use Getopt::Std;
+use Encode::Tec;
 use IO::File;
 use Compress::Zlib;
 
@@ -89,6 +90,8 @@ foreach $enc (@inencs)
     }
     else
     {
+        Encode::UTR22::Regexp::class::reset();
+        
         foreach $r (@{$enc->{'rules'}})
         {
             foreach (split('', $r->{'b'}))
@@ -120,17 +123,29 @@ foreach $enc (reverse @inencs)
     my $tgt = ($reverse[$enccount] ? 'bytes' : 'unicode');
     my $rrev = ($reverse[$enccount] ? '0' : '1');
 
-    if ($enc->{'orders'}{$tgt})
+    if ($enc->isa('Encode::Tec'))
     {
-        compile_order($enc, $rrev, $tgt, $outfh);
-        push (@tables, pad($outfh));
+        foreach my $t (@{$enc->{($reverse[$enccount] ? "f" : "r") . "_tables"}})
+        {
+            $outfh->print($t);
+            push (@tables, pad($outfh));
+        }
     }
-    compile_map($enc, $rrev, $outfh);
-    push (@tables, pad($outfh));
-    if ($enc->{'orders'}{$src})
+    else
     {
-        compile_order($enc, $rrev, $src, $outfh);
+        Encode::UTR22::Regexp::class::reset();
+        if ($enc->{'orders'}{$tgt})
+        {
+            compile_order($enc, $rrev, $tgt, $outfh);
+            push (@tables, pad($outfh));
+        }
+        compile_map($enc, $rrev, $outfh);
         push (@tables, pad($outfh));
+        if ($enc->{'orders'}{$src})
+        {
+            compile_order($enc, $rrev, $src, $outfh);
+            push (@tables, pad($outfh));
+        }
     }
     $enccount--;
 }
@@ -345,7 +360,7 @@ sub compile_map
         
         error(undef, undef, "Ambiguous mapping from " . strerror($k, !$toBytes) . 
                 " at lines $r->[-2][8]{'line'} and $r->[-1][8]{'line'}")
-                if (scalar @{$r} > 1 && $r->[-2][3] == 1 && $r->[-2][1] == 0 && $r->[-2][5] == 0);
+                if (scalar @{$r} > 1 && $r->[-2][3] == 1 && $r->[-2][1] == 0 && $r->[-2][5] == 0 && $r->[-1][8]{'priority'} == $r->[-2][8]{'priority'});
         if (scalar @{$r} == 1)
         {
             if ($r->[0][1] != 0 || $r->[0][5] != 0)
@@ -797,6 +812,11 @@ sub findfirst
 package Encode::UTR22::Regexp::class;
 
 our %tecCount;
+
+sub reset
+{
+    %tecCount = ();
+}
 
 sub asTecRef
 {
