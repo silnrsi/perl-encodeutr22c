@@ -1,3 +1,10 @@
+libencode-utr22-perl (0.16) lucid; urgency=low
+
+  * Non-maintainer upload.
+  * r676: Fix compiling multiple files
+
+ -- Tim Eves <tim_eves@sil.org>  Thu, 17 Jun 2010 11:10:18 +0700
+
 libencode-utr22-perl (0.15) lucid; urgency=low
 
   * Non-maintainer upload.
