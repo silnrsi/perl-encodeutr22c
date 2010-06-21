@@ -1,12 +1,13 @@
 #!/usr/bin/perl
 
 use Encode::UTR22;
-use Getopt::Std;
+use Getopt::Long qw(:config pass_through);
 use Encode::Tec;
 use IO::File;
 use Compress::Zlib;
 
-$VERSION = 0.07;    # MJPH  26-AUG-2009     Add map chaining
+$VERSION = 0.08;    # MJPH  21-JUN-2010     Add info fields
+# $VERSION = 0.07;    # MJPH  26-AUG-2009     Add map chaining
 # $VERSION = 0.06;    # MJPH  12-FEB-2008     fix mapping to deletion
 # $VERSION = 0.05;    # MJPH  17-APR-2006     Fix bug in error message and add version to help
 # $VERSION = 0.04;    # MJPH  30-SEP-2005     handle -ve classes as first rule of reorder
@@ -14,7 +15,11 @@ $VERSION = 0.07;    # MJPH  26-AUG-2009     Add map chaining
 # $VERSION = 0.02;    # MJPH   7-JUL-2002     add bctxt to re-order rules
 # $VERSION = 0.01;    # MJPH   7-SEP-2002     Original
 
-
+%opts = ();
+GetOptions(\%opts, 'v|verbose', 'z|uncompress', 'i|info=i',
+    'lhsname=s', 'rhsname=s',
+    'lhsdesc=s', 'rhsdesc=s', 'version=s', 'contact=s', 'regauth=s',
+    'regname=s', 'copyright=s');
 
 *error = \&Encode::UTR22::error;
 *strerror = \&Encode::UTR22::strerror;
@@ -23,13 +28,7 @@ $incount = 0;
 while (@ARGV)
 {
     my ($a) = shift;
-    if ($a eq '-v')
-    { $opt_v = 1; }
-    elsif ($a eq '-z')
-    { $opt_z = 1; }
-    elsif ($a eq '-i')
-    { $opt_i = shift; }
-    elsif ($a eq '-r')
+    if ($a eq '-r')
     { $reverse[$incount] = 1; }
     else
     {
@@ -42,13 +41,18 @@ $outfile = pop(@infiles);
 unless (defined $outfile and @infiles > 0)
 {
     die <<"EOT";
-    utr22tec [-v] [-z] infiles outfile
+    utr22tec [-v] [-z] [-i num] infiles outfile
 Compiles the given UTR22 XML mapping descriptions into a SILtec binary file
 for use with SILtec. If an infile is preceded by -r it is added reversed.
 
-    -v  Give more information
-    -z  Produce uncompressed file
-version: $VERSION
+    -i --info       Use the numth infile to provide info for the mapping [0]
+    -v --verbose    Give more information
+    -z --uncompress Produce uncompressed file
+
+The following fields override any calculated information field in the output:
+--lhsname, --rhsname, --lhsdesc, --rhsdesc, --version, --contact, --regauth, --regname, --copyright
+
+utr22tec version: $VERSION
 EOT
 }
 
@@ -60,7 +64,7 @@ foreach $ef (@infiles)
     { push(@inencs, Encode::UTR22->process_file($ef) || die "Can't read mapping file $ef"); }
 }
 
-if (!$opt_z)
+if (!$opts{'z'})
 { $outfh = IO::File->new_tmpfile() || die "Can't create temporary file"; }
 else
 { $outfh = IO::File->new("> $outfile") || die "Can't open $outfile for writing"; }
@@ -155,7 +159,7 @@ $outfh->seek($hdr, 0);
 $outfh->print(pack('N*', @tables));
 $outfh->seek(0, 2);
 
-if (!$opt_z)
+if (!$opts{'z'})
 {
     my ($str);
     my ($d, $status) = deflateInit();
@@ -199,18 +203,24 @@ sub pad
 
 sub create_header
 {
-    my ($outfh, $encs, $revs) = @_;
+    my ($outfh, $encs, $revs, $opts) = @_;
     my ($val, $count, $str, @strs, $numtables, $normal, $stroffset, $noffset);
     my ($enc, $lastenc, $enccount, $lnormal);
 
     foreach $enc (@{$encs})
     {
-        if ($enccount == $opt_i)
+        if ($enccount == $opts{'i'})
         {
             $count = -1;
-            foreach $val ($enc->{'info'}{'id'}, 'Unicode', $enc->{'info'}{'description'}, 'Unicode',
-                          $enc->{'info'}{'version'}, $enc->{'info'}{'contact'}, $enc->{'info'}{'registrationAuthority'},
-                          $enc->{'info'}{'registrationName'}, $enc->{'info'}{'copyright'})
+            foreach $val ($opts->{'lhsname'} || $enc->{'info'}{'id'}, 
+                    $opts->{'rhsname'} || 'Unicode', 
+                    $opts->{'lhsdesc'} || $enc->{'info'}{'description'},
+                    $opts->{'rhsdesc'} || 'Unicode',
+                    $opts->{'version'} || $enc->{'info'}{'version'}, 
+                    $opts->{'contact'} || $enc->{'info'}{'contact'},
+                    $opts->{'regauth'} || $enc->{'info'}{'registrationAuthority'},
+                    $opts->{'regname'} || $enc->{'info'}{'registrationName'},
+                    $opts->{'copyright'} || $enc->{'info'}{'copyright'})
             {
                 $count++;
                 next unless $val;
@@ -718,7 +728,7 @@ sub findfirst
     if ($self->{'neg'})
     {
         my (%t) = map {$_ => 1} @{$class->{'elements'}};
-        if ($main::opt_v)
+        if ($main::opts{'v'})
         {
             print STDERR "Negative class($self->{'name'}): %t = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %t) . ")\n";
             print STDERR "over: %range = (" . join(' ', map{sprintf("%04X", unpack('U', $_))} sort keys %{$range}) . ")\n";
