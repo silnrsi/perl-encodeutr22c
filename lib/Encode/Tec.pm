@@ -9,7 +9,7 @@ sub open
     my ($res) = { fname => $fname };
     bless $res, ref $class || $class;
 
-    my ($fh) = IO::File->new("<:raw", $fname) || die "Can't open $fname for reading";
+    my ($fh) = IO::File->new($fname, "<:raw") || die "Can't open $fname for reading";
     $/ = '';
     my ($dat) = <$fh>;
     $fh->close();

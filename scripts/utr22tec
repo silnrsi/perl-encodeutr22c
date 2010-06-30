@@ -212,15 +212,15 @@ sub create_header
         if ($enccount == $opts{'i'})
         {
             $count = -1;
-            foreach $val ($opts->{'lhsname'} || $enc->{'info'}{'id'}, 
-                    $opts->{'rhsname'} || 'Unicode', 
-                    $opts->{'lhsdesc'} || $enc->{'info'}{'description'},
-                    $opts->{'rhsdesc'} || 'Unicode',
-                    $opts->{'version'} || $enc->{'info'}{'version'}, 
-                    $opts->{'contact'} || $enc->{'info'}{'contact'},
-                    $opts->{'regauth'} || $enc->{'info'}{'registrationAuthority'},
-                    $opts->{'regname'} || $enc->{'info'}{'registrationName'},
-                    $opts->{'copyright'} || $enc->{'info'}{'copyright'})
+            foreach $val ($opts{'lhsname'} || $enc->{'info'}{'id'}, 
+                    $opts{'rhsname'} || 'Unicode', 
+                    $opts{'lhsdesc'} || $enc->{'info'}{'description'},
+                    $opts{'rhsdesc'} || 'Unicode',
+                    $opts{'version'} || $enc->{'info'}{'version'}, 
+                    $opts{'contact'} || $enc->{'info'}{'contact'},
+                    $opts{'regauth'} || $enc->{'info'}{'registrationAuthority'},
+                    $opts{'regname'} || $enc->{'info'}{'registrationName'},
+                    $opts{'copyright'} || $enc->{'info'}{'copyright'})
             {
                 $count++;
                 next unless $val;
