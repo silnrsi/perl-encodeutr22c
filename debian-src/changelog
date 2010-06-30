@@ -1,3 +1,11 @@
+libencode-utr22-perl (0.17~jaunty1) lucid; urgency=low
+
+  * Non-maintainer upload.
+  * r680: Fix metadata override command options to take effect.
+  * r679: Add info field command line options to utr22tec.
+
+ -- Tim Eves <tim_eves@sil.org>  Wed, 30 Jun 2010 11:44:59 +0700
+
 libencode-utr22-perl (0.16) lucid; urgency=low
 
   * Non-maintainer upload.
