@@ -18,7 +18,7 @@ sub open
     if ($type eq 'zQmp')
     {
         my ($inf, $status) = inflateInit();
-        $dat = $inf->inflate(substr($dat, 12));
+        $dat = $inf->inflate(substr($dat, 8));
         $type = unpack('a4', $dat);
     }
     if ($type eq 'qMap')
